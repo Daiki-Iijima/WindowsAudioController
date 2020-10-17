@@ -1,9 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Net;
+using System.Net.Sockets;
 
 public class TcpServer
 {
     public Action<string> OnReceive;
+    private NetworkStream networkStream;
 
     public void StartServer(int port)
     {
@@ -44,7 +47,7 @@ public class TcpServer
             ((System.Net.IPEndPoint)client.Client.RemoteEndPoint).Port);
 
         //NetworkStreamを取得
-        System.Net.Sockets.NetworkStream ns = client.GetStream();
+        networkStream = client.GetStream();
 
         //読み取り、書き込みのタイムアウトを10秒にする
         //デフォルトはInfiniteで、タイムアウトしない
@@ -62,7 +65,7 @@ public class TcpServer
         for (; ; )
         {
             //データの一部を受信する
-            resSize = ns.Read(resBytes, 0, resBytes.Length);
+            resSize = networkStream.Read(resBytes, 0, resBytes.Length);
             //Readが0を返した時はクライアントが切断したと判断
             if (resSize == 0)
             {
@@ -74,7 +77,7 @@ public class TcpServer
             ms.Write(resBytes, 0, resSize);
             //まだ読み取れるデータがあるか、データの最後が\nでない時は、
 
-            if (!ns.DataAvailable || resBytes[resSize - 1] == '\n')
+            if (!networkStream.DataAvailable || resBytes[resSize - 1] == '\n')
             {
                 //受信したデータを文字列に変換
                 string resMsg = enc.GetString(ms.GetBuffer(), 0, (int)ms.Length);
@@ -89,12 +92,12 @@ public class TcpServer
                 {
                     //クライアントにデータを送信する
                     //クライアントに送信する文字列を作成
-                    string sendMsg = resMsg.Length.ToString();
+                    //string sendMsg = resMsg.Length.ToString();
                     //文字列をByte型配列に変換
-                    byte[] sendBytes = enc.GetBytes(sendMsg + '\n');
+                    //byte[] sendBytes = enc.GetBytes(sendMsg + '\n');
                     //データを送信する
-                    ns.Write(sendBytes, 0, sendBytes.Length);
-                    Console.WriteLine("返信:" + sendMsg);
+                    //networkStream.Write(sendBytes, 0, sendBytes.Length);
+                    //Console.WriteLine("返信:" + sendMsg);
                 }
             }
         }
@@ -102,7 +105,7 @@ public class TcpServer
         ms.Close();
 
         //閉じる
-        ns.Close();
+        networkStream.Close();
         client.Close();
         Console.WriteLine("クライアントとの接続を閉じました。");
 
@@ -112,11 +115,24 @@ public class TcpServer
 
 
         //  再処理するか
-        Console.WriteLine("再度サーバーを起動しますか？(Y/N)");
-        var s = Console.ReadLine();
+        //Console.WriteLine("再度サーバーを起動しますか？(Y/N)");
+        //var s = Console.ReadLine();
 
-        if (s == "Y" || s == "y")
+        //if (s == "Y" || s == "y")
             StartServer(port);
+    }
+
+    //クライアントにデータを送信する
+    public void SendData(string msg)
+    {
+        //エンコード指定
+        System.Text.Encoding enc = System.Text.Encoding.UTF8;
+        //クライアントに送信する文字列を作成
+        string sendMsg = msg.Length.ToString();
+        //文字列をByte型配列に変換
+        byte[] sendBytes = enc.GetBytes(msg + '\n');
+        //データを送信する
+        networkStream.Write(sendBytes, 0, sendBytes.Length);
     }
 
     private string GetIP()
