@@ -18,6 +18,8 @@ namespace WindowsVolumeController
         [JsonIgnore]
         public NAudio.CoreAudioApi.AudioEndpointVolume MasterVolume;
 
+        public float DeviceVolume { get { return MasterVolume.MasterVolumeLevelScalar; } }
+
         public List<VolumeChannelData> VolumeChannel = new List<VolumeChannelData>();
 
     }
@@ -26,6 +28,7 @@ namespace WindowsVolumeController
     {
         public uint ID { get; set; }
         public string ChannelName { get; set; }
+        public float ChannelVolume { get { return volume.Volume; } }
 
         [JsonIgnore]
         public NAudio.CoreAudioApi.SimpleAudioVolume volume { get; set; }
@@ -36,10 +39,10 @@ namespace WindowsVolumeController
     class Program
     {
         private static TcpServer server;
+        private static VolumeData volumeData;
 
         static void Main(string[] args)
         {
-
             server = new TcpServer();
 
             //  受信イベント設定
@@ -54,11 +57,25 @@ namespace WindowsVolumeController
         {
             if (getMessage == "GET_VOLUME")
             {
-                var data = GetVolumeState();
-                var sendData = JsonConvert.SerializeObject(data);
+                volumeData = GetVolumeState();
+                var sendData = JsonConvert.SerializeObject(volumeData);
                 server.SendData(sendData);
 
                 Console.WriteLine(sendData);
+            }
+            else
+            {
+                var getData = getMessage.Split(',');
+
+                if(getData[0] == volumeData.DeviceName)
+                    volumeData.MasterVolume.MasterVolumeLevelScalar = float.Parse(getData[1]);
+
+                foreach (var data in volumeData.VolumeChannel)
+                {
+                    if (getData[0] == data.ChannelName)
+                        data.volume.Volume = float.Parse(getData[1]);
+                }
+                
             }
         }
 
