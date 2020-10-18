@@ -67,13 +67,20 @@ namespace WindowsVolumeController
             {
                 var getData = getMessage.Split(',');
 
-                if(getData[0] == volumeData.DeviceName)
-                    volumeData.MasterVolume.MasterVolumeLevelScalar = float.Parse(getData[1]);
-
-                foreach (var data in volumeData.VolumeChannel)
+                try
                 {
-                    if (getData[0] == data.ChannelName)
-                        data.volume.Volume = float.Parse(getData[1]);
+                    if (getData[0] == volumeData.DeviceName)
+                        volumeData.MasterVolume.MasterVolumeLevelScalar = float.Parse(getData[1]);
+
+                    foreach (var data in volumeData.VolumeChannel)
+                    {
+                        if (getData[0] == data.ChannelName)
+                            data.volume.Volume = float.Parse(getData[1]);
+                    }
+                }catch
+                {
+                    //  送られてくる値が早すぎて処理しきれていない為に起こるエラーな気がする
+                    Debug.WriteLine("エラー:" + getMessage);
                 }
                 
             }
