@@ -7,8 +7,8 @@ public class TcpServer
 {
     public Action<string> OnReceive;
     private NetworkStream networkStream;
-
-    public void StartServer(int port)
+    
+    public void StartServer(int port,Action<string,string> action)
     {
         //ListenするIPアドレス
         string ipString = GetIP();
@@ -20,6 +20,8 @@ public class TcpServer
         }
 
         System.Net.IPAddress ipAdd = System.Net.IPAddress.Parse(ipString);
+
+        action?.Invoke(ipString,port.ToString());
 
         //ホスト名からIPアドレスを取得する時は、次のようにする
         //string host = "localhost";
@@ -119,7 +121,7 @@ public class TcpServer
         //var s = Console.ReadLine();
 
         //if (s == "Y" || s == "y")
-            StartServer(port);
+            StartServer(port, action);
     }
 
     //クライアントにデータを送信する
