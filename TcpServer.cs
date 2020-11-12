@@ -6,6 +6,7 @@ using System.Net.Sockets;
 public class TcpServer
 {
     public Action<string> OnReceive;
+    public Action OnConnected;
     private NetworkStream networkStream;
     
     public void StartServer(int port,Action<string,string> action)
@@ -47,6 +48,9 @@ public class TcpServer
         Console.WriteLine("クライアント({0}:{1})と接続しました",
             ((System.Net.IPEndPoint)client.Client.RemoteEndPoint).Address,
             ((System.Net.IPEndPoint)client.Client.RemoteEndPoint).Port);
+
+        //  接続成功イベント発火
+        OnConnected?.Invoke();
 
         //NetworkStreamを取得
         networkStream = client.GetStream();

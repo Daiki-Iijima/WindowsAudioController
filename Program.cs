@@ -45,61 +45,67 @@ namespace WindowsVolumeController
 
         static void Main(string[] args)
         {
+
             server = new TcpServer();
 
             //  受信イベント設定
             server.OnReceive += CheckReceiveValue;
+            server.OnConnected += () =>
+            {
 
+                if (app != null)
+                {
+                    app.Close();
+                    app.Dispose();
+                    app = null;
+                }
 
-            NotifyIcon icon = new NotifyIcon();
-            icon.Icon = new Icon(@"C:\Users\DaikiIijima\Downloads\AEDのアイコン素材 2.ico");
-            icon.Visible = true;
-            icon.Text = "常駐アプリテスト";
+            };
 
-            var getStr = Console.ReadLine();
-
-            if (getStr == "Run")
-
-                //  接続待機開始
-                server.StartServer(8888, (ip, port) => ShowQRForm(ip + "," + port));
-            else
-                Console.WriteLine("FUCK YOU!!");
-
-            Console.ReadLine();
+            //  接続待機開始
+            server.StartServer(8888, (ip, port) => ShowQRForm(ip + "," + port));
 
         }
-
+        static Form app = null;
 
         public static void ShowQRForm(string str)
         {
-            Task.Run(() =>
-            {
+            app = new Form();
+            app.FormBorderStyle = FormBorderStyle.None;
 
-                Form app = new Form();
+            // PictureBoxの中心に画像を表示するように設定
+            var pic = new PictureBox();
+            pic.SizeMode = PictureBoxSizeMode.CenterImage;
+            pic.Image = CreateQRCode(str);
 
-                // PictureBoxの中心に画像を表示するように設定
-                var pic = new PictureBox();
-                pic.SizeMode = PictureBoxSizeMode.CenterImage;
-                pic.Image = CreateQRCode(str);
+            Console.WriteLine();
 
-                Console.WriteLine();
-
-                pic.Location = new Point(0, 0);
-                pic.Size = new Size(app.Size.Width - app.PreferredSize.Width, app.Size.Height - app.PreferredSize.Height);
-                app.Controls.Add(pic);
-
-                
-                app.Show();
-
-                app.Location = new Point(2300, 700);
+            pic.Location = new Point(0, 0);
+            pic.Size = new Size(app.Size.Width - app.PreferredSize.Width, app.Size.Height - app.PreferredSize.Height);
+            app.Controls.Add(pic);
 
 
-                for (; ; )
-                {
-                    //  イベント関係の処理
-                    Application.DoEvents();
-                }
-            });
+            app.Show();
+
+
+            //  ディスプレイの高さ
+            int displayHeight = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height;
+            //  ディスプレイの幅
+            int displayWidth = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width;
+
+            //  ウィンドウ幅
+            int appWidth = app.Size.Width;
+            //  ウィンドウ高さ
+            int appHeight = app.Size.Height;
+
+            //  配置する位置
+            int setLocationWidth = displayWidth - appWidth;
+            int setLocationHeight = displayHeight - appHeight;
+
+            //  アプリウィンドウを動かす
+            app.Location = new Point(setLocationWidth, setLocationHeight);
+
+
         }
 
         private static Bitmap CreateQRCode(string writeStr)
@@ -156,7 +162,7 @@ namespace WindowsVolumeController
                 catch
                 {
                     //  送られてくる値が早すぎて処理しきれていない為に起こるエラーな気がする
-                    Debug.WriteLine("エラー:" + getMessage);
+                    //Debug.WriteLine("エラー:" + getMessage);
                 }
 
             }
